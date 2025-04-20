@@ -1,0 +1,10 @@
+SELECT 
+  s.category, 
+  SUM(o.after_discount) AS total_transaksi
+FROM `marketplace_data.order_detail` o
+JOIN `marketplace_data.sku_detail` s
+ON o.sku_id = s.id
+WHERE EXTRACT(YEAR FROM o.order_date) = 2022
+  AND o.is_valid = 1
+GROUP BY s.category
+ORDER BY total_transaksi DESC
