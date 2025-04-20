@@ -1,0 +1,15 @@
+dtpromo = df[
+    (df['is_gross']==1) &
+    (df['is_valid']==0) &
+    (df['is_net']==0) &
+    (df['order_date'].dt.year==2022)
+]
+dtpromo = dtpromo[['customer_id','registered_date']]
+dtpromo.sort_values(by=['customer_id'])
+answer3 = dtpromo.drop_duplicates(subset=['customer_id'])
+answer3
+
+# To import the result to csv files
+from google.colab import files
+dtpromo.to_csv('List Promo Customer.csv', encoding = 'utf-8-sig', index=False)
+files.download('List Promo Customer.csv')
