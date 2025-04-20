@@ -1,0 +1,11 @@
+SELECT 
+  p.payment_method, 
+  COUNT(DISTINCT o.id) AS total_order
+FROM `marketplace_data.order_detail` o
+JOIN `marketplace_data.payment_detail` p
+ON o.payment_id = p.id
+WHERE EXTRACT(YEAR FROM o.order_date) = 2022
+  AND o.is_valid = 1
+GROUP BY p.payment_method
+ORDER BY total_order DESC
+LIMIT 5;
