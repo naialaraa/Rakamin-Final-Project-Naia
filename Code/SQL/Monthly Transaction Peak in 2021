@@ -1,0 +1,8 @@
+SELECT 
+  EXTRACT(MONTH FROM order_date) AS bulan, 
+  SUM(after_discount) AS total_transaksi
+FROM `marketplace_data.order_detail`
+WHERE EXTRACT(YEAR FROM order_date) = 2021
+  AND is_valid = 1
+GROUP BY bulan
+ORDER BY total_transaksi DESC
