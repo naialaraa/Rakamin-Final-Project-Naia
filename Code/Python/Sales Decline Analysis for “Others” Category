@@ -1,0 +1,72 @@
+# Tambahkan kolom tahun
+df['year'] = df['order_date'].dt.year
+
+# Filter data valid saja
+df_valid = df[df['is_valid'] == 1]
+
+# Grup kategori dan tahun
+sales_by_category = (
+    df_valid.groupby(['category', 'year'])['qty_ordered']
+    .sum()
+    .reset_index()
+)
+
+# Ambil hanya data tahun 2021 dan 2022
+sales_by_category = sales_by_category[sales_by_category['year'].isin([2021, 2022])]
+
+# Tampilkan data 15 kategori teratas berdasarkan total penjualan dua tahun
+top_15_categories = (
+    sales_by_category.groupby('category')['qty_ordered']
+    .sum()
+    .sort_values(ascending=False)
+    .head(15)
+    .reset_index()
+)
+
+# Gabungkan dengan data per tahun untuk plot
+top_categories_list = top_15_categories['category'].tolist()
+filtered_sales = sales_by_category[sales_by_category['category'].isin(top_categories_list)]
+
+plt.figure(figsize=(12, 6))
+sns.barplot(data=filtered_sales, x='qty_ordered', y='category', hue='year', palette='Set2')
+plt.title('Perbandingan Kuantitas Penjualan Kategori (2021 vs 2022)')
+plt.xlabel('Total Kuantitas Terjual')
+plt.ylabel('Kategori')
+plt.legend(title='Tahun')
+plt.tight_layout()
+plt.show()
+
+# Other sales
+others_sales = (
+    df_valid[df_valid['category'] == 'Others']
+    .groupby('year')['qty_ordered']
+    .sum()
+    .reset_index()
+)
+print(others_sales)
+
+# Filter data kategori Others
+others_data = df_valid[df_valid['category'] == 'Others']
+
+# Hitung qty per produk per tahun
+others_by_sku = (
+    others_data.groupby(['sku_name', 'year'])['qty_ordered']
+    .sum()
+    .unstack(fill_value=0)
+    .reset_index()
+)
+
+# Tambahkan kolom selisih
+others_by_sku['difference'] = others_by_sku[2022] - others_by_sku[2021]
+
+# Ambil produk dengan penurunan tertinggi
+top_20_decline = others_by_sku.sort_values('difference').head(20)
+
+# Format tabel output yang rapi
+top_20_decline_formatted = top_20_decline[['sku_name', 2021, 2022, 'difference']].copy()
+top_20_decline_formatted.columns = ['Produk', 'Qty 2021', 'Qty 2022', 'Penurunan']
+
+# Reset index dan cetak dengan tabulate
+from tabulate import tabulate
+
+print(tabulate(top_20_decline_formatted, headers='keys', tablefmt='fancy_grid', showindex=True))
