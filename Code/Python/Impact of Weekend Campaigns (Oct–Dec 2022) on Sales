@@ -1,0 +1,107 @@
+df['day'] = df['order_date'].dt.day_name()
+df['month'] = df['order_date'].dt.month
+df['month_num'] = df['order_date'].dt.month_name()
+
+daily_weekend = (
+    df.loc[
+        (df['is_valid'] == 1) &
+        (df['day'].isin(['Saturday', 'Sunday'])) &
+        (df['order_date'].between('2022-10-01', '2022-12-31'))
+    ]
+    .groupby(['month', 'month_num', 'order_date'])
+    .agg(daily_sales_weekend=('before_discount', 'sum'))
+    .round()
+    .reset_index()
+)
+
+daily_weekend
+
+df_weekend = (
+    daily_weekend
+    .groupby(by=["month_num", "month"], as_index=False)
+    .agg(avg_sales_weekend=('daily_sales_weekend', 'mean'))
+    .round()
+    .sort_values(by='avg_sales_weekend', ascending=False)
+    .reset_index(drop=True)
+)
+
+df_weekend
+
+daily_weekday = (
+    df.loc[
+        (df['is_valid'] == 1) &
+        (df['day'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])) &
+        (df['order_date'].between('2022-10-01', '2022-12-31'))
+    ]
+    .groupby(['month', 'month_num', 'order_date'])
+    .agg(daily_sales_weekday=('before_discount', 'sum'))
+    .round()
+    .reset_index()
+)
+
+daily_weekday
+
+df_weekday = (
+    daily_weekday
+    .groupby(by=["month_num", "month"], as_index=False)
+    .agg(avg_sales_weekday=('daily_sales_weekday', 'mean'))
+    .round()
+    .sort_values(by='avg_sales_weekday', ascending=False)
+    .reset_index(drop=True)
+)
+
+df_weekday
+
+merged_avg_sales = pd.merge(df_weekend, df_weekday, on=['month', 'month_num'])
+merged_avg_sales['difference'] = merged_avg_sales['avg_sales_weekend'] - merged_avg_sales['avg_sales_weekday']
+merged_avg_sales['percent_diff'] = (merged_avg_sales['difference'] / merged_avg_sales['avg_sales_weekend']) * 100
+
+merged_avg_sales
+
+# Data untuk chart
+bulan = merged_avg_sales['month_num']
+weekend_sales = merged_avg_sales['avg_sales_weekend']
+weekday_sales = merged_avg_sales['avg_sales_weekday']
+
+# Menambahkan total 3 bulan di akhir
+bulan = list(bulan) + ['Oct-Dec']
+weekend_sales = list(weekend_sales) + [df[(df['day'].isin(['Saturday', 'Sunday'])) & (df['order_date'].between('2022-10-01', '2022-12-31'))]['before_discount'].sum() / len(df[(df['day'].isin(['Saturday', 'Sunday'])) & (df['order_date'].between('2022-10-01', '2022-12-31'))]['order_date'].dt.date.unique())]
+weekday_sales = list(weekday_sales) + [df[(df['day'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])) & (df['order_date'].between('2022-10-01', '2022-12-31'))]['before_discount'].sum() / len(df[(df['day'].isin(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])) & (df['order_date'].between('2022-10-01', '2022-12-31'))]['order_date'].dt.date.unique())]
+
+# Membuat posisi bar
+x = np.arange(len(bulan))
+width = 0.35
+
+# Membuat figure
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Bar chart
+bars1 = ax.bar(x - width/2, weekend_sales, width, label='Weekend', color='#72b6a1')
+bars2 = ax.bar(x + width/2, weekday_sales, width, label='Weekday', color='#e99675')
+
+# Menambahkan label angka di atas bar
+for bar in bars1:
+    height = bar.get_height()
+    ax.annotate(f'{height/1e6:.1f}M',
+                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3),  # 3 points vertical offset
+                textcoords="offset points",
+                ha='center', va='bottom')
+
+for bar in bars2:
+    height = bar.get_height()
+    ax.annotate(f'{height/1e6:.1f}M',
+                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha='center', va='bottom')
+
+# Set label dan title
+ax.set_ylabel('Average Daily Sales')
+ax.set_title('Weekend vs Weekday Sales per Month (Oct - Dec 2022)')
+ax.set_xticks(x)
+ax.set_xticklabels(bulan)
+ax.legend()
+
+plt.tight_layout()
+plt.show()
