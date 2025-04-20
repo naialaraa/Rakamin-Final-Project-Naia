@@ -1,0 +1,34 @@
+WITH transaksi AS (
+  SELECT 
+    s.category,
+    EXTRACT(YEAR FROM o.order_date) AS tahun,
+    SUM(o.after_discount) AS total_transaksi
+  FROM `marketplace_data.order_detail` o
+  JOIN `marketplace_data.sku_detail` s
+    ON o.sku_id = s.id
+  WHERE o.is_valid = 1
+  GROUP BY s.category, tahun
+),
+transaksi_2021 AS (
+  SELECT category, total_transaksi
+  FROM transaksi
+  WHERE tahun = 2021
+),
+transaksi_2022 AS (
+  SELECT category, total_transaksi
+  FROM transaksi
+  WHERE tahun = 2022
+)
+SELECT 
+  t21.category,
+  t21.total_transaksi AS total_2021,
+  t22.total_transaksi AS total_2022,
+  CASE 
+    WHEN t22.total_transaksi > t21.total_transaksi THEN 'Meningkat'
+    WHEN t22.total_transaksi < t21.total_transaksi THEN 'Menurun'
+    WHEN t22.total_transaksi IS NULL THEN 'Tetap'
+    ELSE 'Tetap'
+  END AS status
+FROM transaksi_2021 t21
+LEFT JOIN transaksi_2022 t22
+  ON t21.category = t22.category;
