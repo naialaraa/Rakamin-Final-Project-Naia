@@ -1,0 +1,23 @@
+SELECT 
+  CASE 
+    WHEN LOWER(s.sku_name) LIKE '%samsung%' OR LOWER(s.sku_name) LIKE '%galaxy%' THEN 'Samsung'
+    WHEN LOWER(s.sku_name) LIKE '%apple%' OR LOWER(s.sku_name) LIKE '%iphone%' OR LOWER(s.sku_name) LIKE '%macbook%' THEN 'Apple'
+    WHEN LOWER(s.sku_name) LIKE '%sony%' OR LOWER(s.sku_name) LIKE '%playstation%' THEN 'Sony'
+    WHEN LOWER(s.sku_name) LIKE '%huawei%' THEN 'Huawei'
+    WHEN LOWER(s.sku_name) LIKE '%lenovo%' OR LOWER(s.sku_name) LIKE '%thinkpad%' THEN 'Lenovo'
+    ELSE 'Other'
+  END AS brand,
+  SUM(o.after_discount) AS total_transaksi
+FROM `marketplace_data.order_detail` o
+JOIN `marketplace_data.sku_detail` s
+ON o.sku_id = s.id
+WHERE o.is_valid = 1
+  AND (
+    LOWER(s.sku_name) LIKE '%samsung%' OR LOWER(s.sku_name) LIKE '%galaxy%' OR
+    LOWER(s.sku_name) LIKE '%apple%' OR LOWER(s.sku_name) LIKE '%iphone%' OR LOWER(s.sku_name) LIKE '%macbook%' OR
+    LOWER(s.sku_name) LIKE '%sony%' OR LOWER(s.sku_name) LIKE '%playstation%' OR
+    LOWER(s.sku_name) LIKE '%huawei%' OR
+    LOWER(s.sku_name) LIKE '%lenovo%' OR LOWER(s.sku_name) LIKE '%thinkpad%'
+  )
+GROUP BY brand
+ORDER BY total_transaksi DESC;
