@@ -1,0 +1,35 @@
+# Filter data tahun 2022, valid, dan kategori Mobiles & Tablets
+df_2022_valid = df[
+    (df['category'] == 'Mobiles & Tablets') &
+    (df['is_valid'] == 1) &
+    (df['order_date'].dt.year == 2022)
+]
+
+# Hitung total kuantitas penjualan tiap produk 
+top_5_mobiles = (
+    df_2022_valid.groupby('sku_name')['qty_ordered']
+    .sum()
+    .sort_values(ascending=False)
+    .head(5)
+    .reset_index()
+)
+
+# Tampilkan Top 5 Produk Mobiles & Tablets (Penjualan Valid Tertinggi Tahun 2022 
+print('Top 5 Produk Mobiles & Tablets (Penjualan Valid Tertinggi Tahun 2022')
+print(top_5_mobiles)
+
+# Visualisasi 
+plt.figure(figsize=(10,6))
+sns.barplot(
+    data=top_5_mobiles,
+    y='sku_name',
+    x='qty_ordered',
+    hue='sku_name', 
+    palette='Set2',
+    legend=False    
+)
+plt.title('Top 5 Produk Mobiles & Tablets (Penjualan Valid Tertinggi Tahun 2022)', fontsize=14)
+plt.xlabel('Jumlah Kuantitas Terjual')
+plt.ylabel('Nama Produk')
+plt.tight_layout()
+plt.show()
